@@ -36,21 +36,24 @@ module.exports = ((req, res) => {
 function sendFile(fileName, res) {
     let fileStream = fs.createReadStream(fileName);
     fileStream.pipe(res);
-
     fileStream
-
-        .on('error', function () {
-            res.statusCode = 500;
-            res.end("Server error");
+        .on('error', err => {
+            if (err.code === 'ENOENT'){
+                res.statusCode = 404;
+                res.end(`File not found!`);
+            } else {
+                res.statusCode = 500;
+                res.end(`Server error`);
+                console.error(err);
+            }
         })
-
         .on('open', () => {
             res.setHeader('Content-Type', mime.lookup(fileName));
-            console.log('***' + mime.lookup(fileName));
         })
-
         .on('close', function () {
             fileStream.destroy();
         });
-
+        res.on('close', () => {
+            fileStream.destroy();
+        });
 }
